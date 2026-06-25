@@ -154,6 +154,8 @@ def check_password():
                 allowed_users = {
                     "leoman13813@gmail.com": "leoman",    # 你的管理帳號 (範例)
                     "billups1688@gmail.com": "storm888"    # 朋友的帳號 (範例)
+                    "kaidod820@gmail.com": "storm888"    # 朋友的帳號 (範例)
+
                 }
                 
                 # 驗證邏輯
