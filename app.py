@@ -12,6 +12,7 @@ import os
 import time
 import re
 import base64
+from urllib.parse import unquote # 用於解碼網址中的中文字
 
 # ==========================================
 # 網頁標題與狀態初始化 (加入分頁 LOGO)
@@ -23,7 +24,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 視覺樣式設定 (提前載入以美化登入畫面)
+# 視覺樣式設定
 # ==========================================
 nordic_css = """
 <style>
@@ -129,12 +130,9 @@ st.markdown(nordic_css, unsafe_allow_html=True)
 # ==========================================
 def check_password():
     """回傳 True 代表已登入，回傳 False 代表未登入"""
-    
-    # 1. 檢查 Session State 是否已經標記為登入成功
     if st.session_state.get("password_correct", False):
         return True
 
-    # 2. 如果還沒登入，顯示登入框
     st.markdown("<br><br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
@@ -143,46 +141,42 @@ def check_password():
             st.markdown("<p style='text-align: center; color: #8A8F95; margin-bottom: 20px;'>請輸入已授權的 Email 與通行密碼</p>", unsafe_allow_html=True)
             
             email_input = st.text_input("授權 Email")
-            password_input = st.text_input("通行密碼", type="password") # 輸入時會變成隱碼 ***
+            password_input = st.text_input("通行密碼", type="password") 
             
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("登入系統", use_container_width=True, type="primary"):
                 # =====================================
                 # 📝 在這裡設定允許進入的「白名單」(Email : 密碼)
-                # 請將下方的 Email 與 密碼 替換成你自己的設定！
                 # =====================================
                 allowed_users = {
-                    "leoman13813@gmail.com": "leoman",    # 你的管理帳號 (範例)
-                    "billups1688@gmail.com": "storm888",    # 朋友的帳號 (範例)
-                    "kaidod820@gmail.com": "storm888"    # 朋友的帳號 (範例)
-
+                    "leoman13813@gmail.com": "leoman",    
+                    "billups1688@gmail.com": "storm888", 
+                    "kaidod820@gmail.com": "storm888",
+                    "certainok2365@gmail.com": "storm888"    
                 }
                 
-                # 驗證邏輯
                 if email_input in allowed_users and allowed_users[email_input] == password_input:
                     st.session_state["password_correct"] = True
-                    st.rerun() # 驗證成功，重新整理頁面放行
+                    st.rerun() 
                 else:
                     st.error("🚫 帳號或密碼錯誤，請確認您是否有存取權限。")
             
     return False
 
-# 呼叫守門員：如果驗證沒過，就立刻停止執行後面的所有程式碼！
 if not check_password():
     st.stop()
 
 
 # ==========================================
-# (驗證成功後才會執行的系統主邏輯)
+# 系統主邏輯開始
 # ==========================================
 
-# 讀取 Logo 圖片並轉為 Base64 (用於與主標題文字並排顯示)
+# 讀取 Logo 圖片並轉為 Base64
 logo_path = "Gemini_Generated_Image_rmgi3urmgi3urmgi.png"
 logo_html = ""
 if os.path.exists(logo_path):
     with open(logo_path, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode()
-    # 利用 CSS background-size 放大並精準裁切中間的圓形，完美去掉黑邊
     logo_html = f'''
     <span style="
         display: inline-block; 
@@ -199,10 +193,9 @@ if os.path.exists(logo_path):
     "></span>
     '''
 
-# 更新主標題：字體改為思源黑體 (Noto Sans TC)
+# 更新主標題
 st.markdown(f"<h2 style='text-align: left; font-family: \"Noto Sans TC\", sans-serif; color: #2F4858; letter-spacing: 4px; font-weight: 900; margin-top: -20px; margin-bottom: 20px;'>{logo_html}風暴眼</h2>", unsafe_allow_html=True)
 
-# 初始化 Session State (與原始碼一致)
 if 'selected_stock' not in st.session_state: st.session_state.selected_stock = None
 if 'show_up' not in st.session_state: st.session_state.show_up = False
 if 'show_dn' not in st.session_state: st.session_state.show_dn = False
@@ -213,7 +206,6 @@ if 'show_dn' not in st.session_state: st.session_state.show_dn = False
 def save_strategy_image(df_up, df_dn, fetch_time, export_dir):
     try:
         if not os.path.exists(export_dir): os.makedirs(export_dir)
-        # 繪圖時加入 Noto Sans TC 確保靜態快照字體也漂亮
         plt.rcParams['font.sans-serif'] = ['Noto Sans TC', 'Microsoft JhengHei', 'PingFang HK', 'Arial Unicode MS', 'sans-serif']
         plt.rcParams['axes.unicode_minus'] = False
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
@@ -230,8 +222,8 @@ def save_strategy_image(df_up, df_dn, fetch_time, export_dir):
             if "Yahoo代號" in df_plot.columns: df_plot = df_plot.drop(columns=["Yahoo代號"])
             table_data = [df_plot.columns.tolist()] + df_plot.values.tolist()
             
-            # 【優化】加入 colWidths 限制靜態圖表中表格的寬度，使其更為緊湊
-            col_widths = [0.15, 0.22, 0.15, 0.15, 0.15] 
+            # 【配合新增的產業族群，調整靜態快照的表格欄位寬度比例】
+            col_widths = [0.12, 0.18, 0.18, 0.12, 0.12, 0.12] 
             table = ax.table(cellText=table_data, colWidths=col_widths, loc='center', cellLoc='center')
             table.auto_set_font_size(False)
             table.set_fontsize(10)
@@ -241,7 +233,6 @@ def save_strategy_image(df_up, df_dn, fetch_time, export_dir):
                 cell.set_text_props(weight='bold', color='#FFFFFF')
                 cell.set_facecolor('#4A6572')
 
-        # 更新靜態快照標題
         draw_table(ax1, df_up, "暴眼突圍術 (紅K)", '#D9736A')
         draw_table(ax2, df_dn, "暴眼定錨法 (黑K)", '#6B9080')
 
@@ -263,6 +254,23 @@ def _safe_float(val):
         if clean_val in ['-', '--', '無', '']: return 0.0
         return float(clean_val)
     except: return 0.0
+
+# 🌟 新增：針對個別股票爬取所屬「產業族群」 (長效快取 7 天)
+@st.cache_data(ttl=86400 * 7)
+def get_stock_industry(symbol):
+    clean_sym = symbol.replace('.TW', '').replace('.TWO', '')
+    url = f"https://tw.stock.yahoo.com/quote/{clean_sym}"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        res = requests.get(url, headers=headers, timeout=5)
+        # 尋找 Yahoo 財經中特有的產業類別連結
+        match = re.search(r'href="/class-quote\?category=([^"]+)"', res.text)
+        if match:
+            # 必須透過 unquote 解碼網址中的中文字 (如 %E5%8D%8A%E5%B0%8E%E9%AB%94 -> 半導體)
+            return unquote(match.group(1))
+        return "ETF/其他"
+    except Exception:
+        return "未知"
 
 def scrape_yahoo_table(symbol, endpoint, date_regex):
     clean_sym = symbol.replace('.TW', '').replace('.TWO', '')
@@ -686,7 +694,7 @@ def get_market_data():
     except Exception: return pd.DataFrame(), ""
 
 # ==========================================
-# 6. 全局框架切換 (新增頂部 Tabs)
+# 6. 全局框架切換 (頂部 Tabs)
 # ==========================================
 main_tabs = st.tabs(["📊 金錢策略", "📈 籌碼深度透視", "🔮 AI 趨勢預測", "⚙️ 回測與資產管理"])
 
@@ -770,7 +778,7 @@ with main_tabs[0]:
         render_stock_detail(st.session_state.selected_stock)
 
     elif st.session_state.show_up or st.session_state.show_dn:
-        with st.spinner('同步數據中...'):
+        with st.spinner('同步數據與產業中 (初次查詢可能稍需幾秒)...'):
             raw_df, fetch_time = get_market_data()
 
         if not raw_df.empty:
@@ -780,16 +788,25 @@ with main_tabs[0]:
             up_cond = (base_df["漲跌幅(%)"] <= max_up_change) & (base_df["當前價"] >= base_df["開盤價"])
             df_up = base_df[up_cond].sort_values(by="漲跌幅(%)", ascending=False).head(20).reset_index(drop=True)
             df_up.index += 1
+            
+            # 【新增】僅針對過濾後的前 20 名反查產業族群，大幅節省時間
+            if not df_up.empty:
+                df_up["產業族群"] = df_up["Yahoo代號"].apply(get_stock_industry)
 
             dn_cond = (base_df["漲跌幅(%)"] >= max_dn_change) & (base_df["當前價"] < base_df["開盤價"])
             df_dn = base_df[dn_cond].sort_values(by="漲跌幅(%)", ascending=False).head(20).reset_index(drop=True)
             df_dn.index += 1
+            
+            # 【新增】反查空方策略的產業族群
+            if not df_dn.empty:
+                df_dn["產業族群"] = df_dn["Yahoo代號"].apply(get_stock_industry)
 
             if auto_triggered or run_snapshot:
                 img_path = save_strategy_image(df_up, df_dn, fetch_time, export_dir)
                 if img_path: st.success(f"快照已儲存：{img_path}")
 
-            display_cols = ["代號", "名稱", "當前價", "開盤價", "漲跌幅(%)"]
+            # 【更新】顯示欄位加入「產業族群」
+            display_cols = ["代號", "名稱", "產業族群", "當前價", "開盤價", "漲跌幅(%)"]
 
             if st.session_state.show_up:
                 col_t1, col_t2 = st.columns([6, 4])
@@ -797,7 +814,8 @@ with main_tabs[0]:
                 with col_t2: st.markdown(f"<div style='text-align: right; margin-top: 15px; color: #8A8F95; font-size: 14px;'>資料時間：{fetch_time}</div>", unsafe_allow_html=True)
                 
                 if not df_up.empty:
-                    df_col, _ = st.columns([3.5, 6.5])
+                    # 配合新增的欄位，微調左側顯示佔比為 40%
+                    df_col, _ = st.columns([4, 6])
                     with df_col:
                         st.dataframe(df_up[display_cols], use_container_width=True, hide_index=True)
                     if enable_charts: draw_overview_grid(df_up, chart_limit)
@@ -810,7 +828,8 @@ with main_tabs[0]:
                 with col_t2: st.markdown(f"<div style='text-align: right; margin-top: 15px; color: #8A8F95; font-size: 14px;'>資料時間：{fetch_time}</div>", unsafe_allow_html=True)
                 
                 if not df_dn.empty:
-                    df_col, _ = st.columns([3.5, 6.5])
+                    # 配合新增的欄位，微調左側顯示佔比為 40%
+                    df_col, _ = st.columns([4, 6])
                     with df_col:
                         st.dataframe(df_dn[display_cols], use_container_width=True, hide_index=True)
                     if enable_charts: draw_overview_grid(df_dn, chart_limit)
