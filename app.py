@@ -22,7 +22,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# 聖家堂午後光影風格 CSS (載入思源黑體與思源宋體)
+# ==========================================
+# 視覺樣式設定 (提前載入以美化登入畫面)
+# ==========================================
 nordic_css = """
 <style>
     /* 載入 Google Fonts: 思源黑體 (Noto Sans TC) 與 思源宋體 (Noto Serif TC) */
@@ -40,13 +42,10 @@ nordic_css = """
     }
 
     /* 2. 標題與文字顏色與字體劃分 */
-    /* 標題層級：使用思源黑體 */
     h1, h2, h3, h4, h5, h6 {
         color: #2D3436;
         font-family: 'Noto Sans TC', "PingFang TC", "Microsoft JhengHei", sans-serif !important;
     }
-    
-    /* 內文層級：使用思源宋體 */
     p, span, div, li, th, td, label {
         color: #2D3436;
         font-family: 'Noto Serif TC', "PingFang TC", "Microsoft JhengHei", serif;
@@ -62,7 +61,7 @@ nordic_css = """
         padding: 1.5rem !important;
     }
 
-    /* 4. 按鈕設計 (陽光漸層質感) - 介面按鈕維持黑體較為俐落 */
+    /* 4. 按鈕設計 */
     .stButton > button {
         background: linear-gradient(90deg, #FCEAB8 0%, #F9D423 100%);
         color: #2D3436;
@@ -77,15 +76,13 @@ nordic_css = """
         background: #F9D423;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-
-    /* 定時快照與返回按鈕 (Primary按鈕) 專屬樣式：字體改為米白 */
     .stButton > button[kind="primary"] {
         background: linear-gradient(90deg, #4A6572 0%, #2F4858 100%);
-        color: #FAF3E0; /* 修改為米白字體 */
+        color: #FAF3E0; 
     }
     .stButton > button[kind="primary"]:hover {
         background: #2F4858;
-        color: #FFFFFF; /* 滑過時變為亮白，增加互動感 */
+        color: #FFFFFF; 
     }
 
     /* 5. 頁籤 Tabs */
@@ -97,7 +94,7 @@ nordic_css = """
         padding-top: 10px;
         padding-bottom: 10px;
         color: #8A8F95;
-        font-family: 'Noto Sans TC', sans-serif !important; /* 頁籤標題使用黑體 */
+        font-family: 'Noto Sans TC', sans-serif !important; 
         font-size: 1.1rem !important;
     }
     .stTabs [aria-selected="true"] {
@@ -112,8 +109,6 @@ nordic_css = """
         border: 1px solid #E8E6E1;
         background-color: rgba(255, 255, 255, 0.5);
     }
-    
-    /* 【排版壓縮】減少數值與文字輸入框的垂直佔用空間，讓左右兩排完美對齊 */
     .stNumberInput, .stTextInput { margin-bottom: -15px !important; }
     .stCheckbox { margin-bottom: -10px; }
 
@@ -127,8 +122,57 @@ nordic_css = """
     hr { border-top-color: #E8E6E1 !important; }
 </style>
 """
-
 st.markdown(nordic_css, unsafe_allow_html=True)
+
+# ==========================================
+# 🔒 身分驗證守門員模組
+# ==========================================
+def check_password():
+    """回傳 True 代表已登入，回傳 False 代表未登入"""
+    
+    # 1. 檢查 Session State 是否已經標記為登入成功
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # 2. 如果還沒登入，顯示登入框
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1.2, 1])
+    with col2:
+        with st.container(border=True):
+            st.markdown("<h3 style='text-align: center; color: #4A6572; font-family: \"Noto Sans TC\", sans-serif; letter-spacing: 2px;'>🔒 風暴眼 - 系統登入</h3>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #8A8F95; margin-bottom: 20px;'>請輸入已授權的 Email 與通行密碼</p>", unsafe_allow_html=True)
+            
+            email_input = st.text_input("授權 Email")
+            password_input = st.text_input("通行密碼", type="password") # 輸入時會變成隱碼 ***
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("登入系統", use_container_width=True, type="primary"):
+                # =====================================
+                # 📝 在這裡設定允許進入的「白名單」(Email : 密碼)
+                # 請將下方的 Email 與 密碼 替換成你自己的設定！
+                # =====================================
+                allowed_users = {
+                    "leoman13813@gmail.com": "leoman",    # 你的管理帳號 (範例)
+                    "billups1688@gmail.com": "storm888"    # 朋友的帳號 (範例)
+                }
+                
+                # 驗證邏輯
+                if email_input in allowed_users and allowed_users[email_input] == password_input:
+                    st.session_state["password_correct"] = True
+                    st.rerun() # 驗證成功，重新整理頁面放行
+                else:
+                    st.error("🚫 帳號或密碼錯誤，請確認您是否有存取權限。")
+            
+    return False
+
+# 呼叫守門員：如果驗證沒過，就立刻停止執行後面的所有程式碼！
+if not check_password():
+    st.stop()
+
+
+# ==========================================
+# (驗證成功後才會執行的系統主邏輯)
+# ==========================================
 
 # 讀取 Logo 圖片並轉為 Base64 (用於與主標題文字並排顯示)
 logo_path = "Gemini_Generated_Image_rmgi3urmgi3urmgi.png"
@@ -642,19 +686,15 @@ def get_market_data():
 # ==========================================
 # 6. 全局框架切換 (新增頂部 Tabs)
 # ==========================================
-# 建立頂層導航標籤
 main_tabs = st.tabs(["📊 金錢策略", "📈 籌碼深度透視", "🔮 AI 趨勢預測", "⚙️ 回測與資產管理"])
 
-# 原本的所有邏輯全部放入第一個 Tab 內
 with main_tabs[0]:
     with st.container(border=True):
         st.markdown("<h4 style='margin-bottom: 5px; color: #2D3436; font-family: \"Noto Sans TC\", sans-serif;'>策略參數與自動化</h4>", unsafe_allow_html=True)
 
-        # 區分左右半部，左半部為參數網格，右半部為顯示設定
         left_panel, right_panel = st.columns([5.5, 4.5])
 
         with left_panel:
-            # 第一排輸入框
             c1, c2, c3 = st.columns([2, 2, 1.5], gap="small")
             with c1: min_price = st.number_input("最低價", value=10, step=10)
             with c2: max_price = st.number_input("最高價", value=700, step=10)
@@ -662,25 +702,20 @@ with main_tabs[0]:
                 st.markdown("<div style='margin-top: 31px;'></div>", unsafe_allow_html=True)
                 exclude_etf = st.checkbox("排除 ETF", value=True)
 
-            # 第二排輸入框
             c4, c5, _ = st.columns([2, 2, 1.5], gap="small")
             with c4: max_up_change = st.number_input("最高漲幅限制%", value=6.0, step=0.5)
             with c5: max_dn_change = st.number_input("最低跌幅限制%", value=-6.0, step=0.5)
 
         with right_panel:
-            # 將顯示圖表相關控制移至右側，並與左側第一排對齊
             rc1, rc2 = st.columns([1, 1.5], gap="small")
             with rc1:
-                # 加上 margin-top 讓開關剛好跟右側 Slider 對齊
                 st.markdown("<div style='margin-top: 31px;'></div>", unsafe_allow_html=True)
                 enable_charts = st.toggle("顯示圖表總覽", value=False)
             with rc2:
                 chart_limit = st.slider("最多顯示數量", min_value=3, max_value=21, step=3, value=6)
 
-            # 將快照儲存路徑移入右半部，與左側第二排完美水平對齊
             export_dir = st.text_input("快照儲存路徑", value=os.path.join(os.getcwd(), "exports"))
 
-        # 使用自訂 HR 標籤來取代 st.divider() 以大幅減少上下留白
         st.markdown("<hr style='margin-top: 5px; margin-bottom: 15px; border-top: 1px solid #E8E6E1;'>", unsafe_allow_html=True)
 
         b1, b2, b3, b4, b5 = st.columns([1.5, 1.5, 1.5, 1, 1.5], gap="small")
@@ -724,7 +759,7 @@ with main_tabs[0]:
         st.session_state.show_up, st.session_state.show_dn = True, True
 
     # ------------------------------------------
-    # 主邏輯顯示 (限定在金錢策略 Tab 內)
+    # 7. 主邏輯顯示
     # ------------------------------------------
     if st.session_state.selected_stock is not None:
         if st.button("返回策略清單", type="primary", use_container_width=True):
@@ -779,9 +814,6 @@ with main_tabs[0]:
                     if enable_charts: draw_overview_grid(df_dn, chart_limit)
                 else: st.info("無符合標的")
 
-# ------------------------------------------
-# 未來擴充的 Tab 預留區塊
-# ------------------------------------------
 with main_tabs[1]:
     st.info("💡 **籌碼深度透視**：此區塊為未來新功能保留。您可以考慮在這裡加入三大法人進階追蹤、大戶持股比例變化圖等進階籌碼面功能。")
 
